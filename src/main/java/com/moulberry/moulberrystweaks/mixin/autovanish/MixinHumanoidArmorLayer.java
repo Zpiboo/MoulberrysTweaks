@@ -3,9 +3,12 @@ package com.moulberry.moulberrystweaks.mixin.autovanish;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.moulberry.moulberrystweaks.ext.TranslucentAlphaExt;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.layers.EquipmentLayerRenderer;
 import net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer;
 import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -20,15 +23,15 @@ public abstract class MixinHumanoidArmorLayer {
     @Final
     private EquipmentLayerRenderer equipmentRenderer;
 
-    @Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/renderer/entity/state/HumanoidRenderState;FF)V", at = @At("HEAD"))
-    public void renderHead(PoseStack poseStack, MultiBufferSource multiBufferSource, int i, HumanoidRenderState humanoidRenderState, float f, float g, CallbackInfo ci) {
-        if (humanoidRenderState instanceof TranslucentAlphaExt ext1 && this.equipmentRenderer instanceof TranslucentAlphaExt ext2) {
+    @Inject(method = "renderArmorPiece", at = @At("HEAD"))
+    public void renderHead(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, ItemStack itemStack, EquipmentSlot slot, int lightCoords, HumanoidRenderState state, CallbackInfo ci) {
+        if (state instanceof TranslucentAlphaExt ext1 && this.equipmentRenderer instanceof TranslucentAlphaExt ext2) {
             ext2.moulberrystweaks$setTranslucentAlpha(ext1.moulberrystweaks$getTranslucentAlpha());
         }
     }
 
-    @Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;ILnet/minecraft/client/renderer/entity/state/HumanoidRenderState;FF)V", at = @At("RETURN"))
-    public void renderReturn(PoseStack poseStack, MultiBufferSource multiBufferSource, int i, HumanoidRenderState humanoidRenderState, float f, float g, CallbackInfo ci) {
+    @Inject(method = "renderArmorPiece", at = @At("RETURN"))
+    public void renderReturn(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, ItemStack itemStack, EquipmentSlot slot, int lightCoords, HumanoidRenderState state, CallbackInfo ci) {
         if (this.equipmentRenderer instanceof TranslucentAlphaExt ext2) {
             ext2.moulberrystweaks$setTranslucentAlpha(0xFF);
         }

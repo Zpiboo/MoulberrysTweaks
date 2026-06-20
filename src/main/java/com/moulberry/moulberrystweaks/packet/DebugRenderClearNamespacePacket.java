@@ -6,10 +6,10 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record DebugRenderClearNamespacePacket(String namespace) implements CustomPacketPayload {
-    public static final Type<DebugRenderClearNamespacePacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("debugrender", "clear_namespace"));
+    public static final Type<DebugRenderClearNamespacePacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath("debugrender", "clear_namespace"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, DebugRenderClearNamespacePacket> STREAM_CODEC = StreamCodec.composite(
         ByteBufCodecs.STRING_UTF8,

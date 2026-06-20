@@ -2,6 +2,7 @@ package com.moulberry.moulberrystweaks.mixin.attackindicator;
 
 import com.moulberry.moulberrystweaks.ext.LocalPlayerExt;
 import net.minecraft.world.entity.player.Player;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -17,7 +18,14 @@ public class MixinPlayer {
         }
     }
 
-    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;moveCloak()V"))
+    @Inject(
+            method = "tick",
+            at = @At(
+                    value = "FIELD",
+                    target = "Lnet/minecraft/world/entity/player/Player;attackStrengthTicker:I",
+                    opcode = Opcodes.PUTFIELD
+            )
+    )
     public void tick(CallbackInfo ci) {
         if (this instanceof LocalPlayerExt localPlayerExt) {
             localPlayerExt.mt$incrementVisualAttackStrengthScale();

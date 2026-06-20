@@ -10,12 +10,17 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.moulberry.moulberrystweaks.debugrender.DebugRenderManager;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LevelTargetBundle;
 import net.minecraft.client.renderer.RenderBuffers;
+import net.minecraft.client.renderer.chunk.ChunkSectionsToRender;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
 import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
 import org.joml.Vector4f;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -32,12 +37,15 @@ public class MixinLevelRenderer {
 
     @Shadow @Final private LevelTargetBundle targets;
 
-    @Inject(method="renderLevel", at=@At(
-        value = "INVOKE",
-        target = "Lnet/minecraft/client/Options;getCloudsType()Lnet/minecraft/client/CloudStatus;"
-    ))
-    public void renderLevelPost(GraphicsResourceAllocator graphicsResourceAllocator, DeltaTracker deltaTracker, boolean bl, Camera camera, Matrix4f frustumMatrix,
-            Matrix4f projectionMatrix, GpuBufferSlice gpuBufferSlice, Vector4f vector4f, boolean bl2, CallbackInfo ci, @Local FrameGraphBuilder frameGraphBuilder) {
+    @Inject(
+            method = "renderLevel",
+            at = @At(
+                    value = "FIELD",
+                    target = "Lnet/minecraft/client/renderer/state/OptionsRenderState;cloudStatus:Lnet/minecraft/client/CloudStatus;",
+                    opcode = Opcodes.GETFIELD
+            )
+    )
+    public void renderLevelPost(GraphicsResourceAllocator resourceAllocator, DeltaTracker deltaTracker, boolean renderOutline, CameraRenderState cameraState, Matrix4fc modelViewMatrix, GpuBufferSlice terrainFog, Vector4f fogColor, boolean shouldRenderSky, ChunkSectionsToRender chunkSectionsToRender, CallbackInfo ci, @Local FrameGraphBuilder frameGraphBuilder) {
         if (!DebugRenderManager.hasShapesToRender()) {
             return;
         }
@@ -51,14 +59,14 @@ public class MixinLevelRenderer {
             this.renderBuffers.bufferSource().endBatch();
 
             PoseStack poseStack = new PoseStack();
-            poseStack.mulPose(frustumMatrix);
+            poseStack.mulPose(modelViewMatrix);  // TODO: i have absolutely no idea what im doing with this (frustumMatrix -> modelViewMatrix)
 
             // Set model view stack to identity
             var modelViewStack = RenderSystem.getModelViewStack();
             modelViewStack.pushMatrix();
             modelViewStack.identity();
 
-            DebugRenderManager.renderWorld(poseStack, camera);
+            DebugRenderManager.renderWorld(poseStack, Minecraft.getInstance().gameRenderer.getMainCamera());  // TODO: im not sure abt this either... (removed camera param -> fetch main camera from mc.gameRenderer)
 
             this.renderBuffers.bufferSource().endBatch();
 

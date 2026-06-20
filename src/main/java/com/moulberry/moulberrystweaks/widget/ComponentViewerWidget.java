@@ -1,16 +1,11 @@
 package com.moulberry.moulberrystweaks.widget;
 
 import com.google.common.hash.HashCode;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.moulberry.moulberrystweaks.formatting.FormattedSnbtPrinter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.TypedDataComponent;
-import net.minecraft.locale.Language;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
@@ -18,16 +13,10 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.resources.RegistryOps;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.HashOps;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 public class ComponentViewerWidget extends FloatingTextWidget {
 

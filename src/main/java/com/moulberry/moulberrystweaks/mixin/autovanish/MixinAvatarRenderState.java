@@ -1,12 +1,12 @@
 package com.moulberry.moulberrystweaks.mixin.autovanish;
 
 import com.moulberry.moulberrystweaks.ext.TranslucentAlphaExt;
-import net.minecraft.client.renderer.entity.state.PlayerRenderState;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-@Mixin(PlayerRenderState.class)
-public class MixinPlayerRenderState implements TranslucentAlphaExt {
+@Mixin(AvatarRenderState.class)
+public class MixinAvatarRenderState implements TranslucentAlphaExt {
 
     @Unique
     private int translucentAlpha = 0xFF;

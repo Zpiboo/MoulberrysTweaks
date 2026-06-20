@@ -14,6 +14,7 @@ import net.minecraft.network.protocol.game.ClientboundContainerSetSlotPacket;
 import net.minecraft.network.protocol.game.ClientboundOpenScreenPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClickPacket;
 import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.world.item.ItemStackTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +47,7 @@ public class PacketViewerWidget extends FloatingTextWidget {
             builder.append("ContainerId=").append(containerClick.containerId()).append("  ");
             builder.append("StateId=").append(containerClick.stateId()).append("  ");
             builder.append("SlotNum=").append(containerClick.slotNum()).append("  ");
-            builder.append("ClickType=").append(containerClick.clickType()).append("  ");
+            builder.append("ContainerInput=").append(containerClick.containerInput()).append("  "); // TODO: test that ContainerInput entry in packet works well
         } else if (packet instanceof ServerboundContainerClosePacket containerClose) {
             builder.append("ContainerClose\n  ");
             builder.append("ContainerId=").append(containerClose.getContainerId()).append("  ");
@@ -56,7 +57,13 @@ public class PacketViewerWidget extends FloatingTextWidget {
             builder.append("StateId=").append(containerSetSlot.getStateId()).append("  ");
             builder.append("Slot=").append(containerSetSlot.getSlot()).append("  ");
 
-            extra = Component.literal("ItemStack").withStyle(Style.EMPTY.withUnderlined(true).withHoverEvent(new HoverEvent.ShowItem(containerSetSlot.getItem().copy())));
+            extra = Component.literal("ItemStack").withStyle(
+                    Style.EMPTY
+                            .withUnderlined(true)
+                            .withHoverEvent(new HoverEvent.ShowItem(
+                                    ItemStackTemplate.fromNonEmptyStack(containerSetSlot.getItem())
+                            ))
+            );
         } else if (packet instanceof ClientboundContainerSetContentPacket containerSetContent) {
             builder.append("ContainerSetContent\n  ");
             builder.append("ContainerId=").append(containerSetContent.containerId()).append("  ");
@@ -65,7 +72,13 @@ public class PacketViewerWidget extends FloatingTextWidget {
 
             MutableComponent contents = Component.empty();
             for (int i = 0; i < containerSetContent.items().size(); i++) {
-                contents.append(Component.literal(String.valueOf(i)).withStyle(Style.EMPTY.withUnderlined(true).withHoverEvent(new HoverEvent.ShowItem(containerSetContent.items().get(i).copy()))));
+                contents.append(Component.literal(String.valueOf(i)).withStyle(
+                        Style.EMPTY
+                                .withUnderlined(true)
+                                .withHoverEvent(new HoverEvent.ShowItem(
+                                        ItemStackTemplate.fromNonEmptyStack(containerSetContent.items().get(i))
+                                ))
+                ));
                 if (i != containerSetContent.items().size() - 1) {
                     contents.append(",");
                 }

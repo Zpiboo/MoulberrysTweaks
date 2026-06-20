@@ -1,22 +1,18 @@
 package com.moulberry.moulberrystweaks.debugrender.shapes;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.*;
 import com.moulberry.moulberrystweaks.debugrender.CustomRenderTypes;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
+import org.joml.Quaternionfc;
 
 import java.util.function.Consumer;
 
-public record DebugShapeBox(Vec3 center, Vec3 size, Quaternionf rotation, int faceArgb, int lineArgb, float lineThickness) implements DebugShape {
+public record DebugShapeBox(Vec3 center, Vec3 size, Quaternionfc rotation, int faceArgb, int lineArgb, float lineThickness) implements DebugShape {
 
     public static final StreamCodec<RegistryFriendlyByteBuf, DebugShapeBox> STREAM_CODEC = StreamCodec.composite(
         Vec3.STREAM_CODEC,
@@ -123,7 +119,7 @@ public record DebugShapeBox(Vec3 center, Vec3 size, Quaternionf rotation, int fa
 
         alpha = ((this.lineArgb >> 24) & 0xFF)/255f;
         if (alpha > 0.01) {
-            BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL);
+            BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.LINES, DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH);
 
             float red = ((this.lineArgb >> 16) & 0xFF)/255f;
             float green = ((this.lineArgb >> 8) & 0xFF)/255f;
@@ -134,38 +130,37 @@ public record DebugShapeBox(Vec3 center, Vec3 size, Quaternionf rotation, int fa
             float yAxisGreen = showAxis ? 0 : green;
             float zAxisBlue = showAxis ? 0 : blue;
 
-            bufferBuilder.addVertex(matrix4f, minX, minY, minZ).setColor(red, yAxisGreen, zAxisBlue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02());
-            bufferBuilder.addVertex(matrix4f, maxX, minY, minZ).setColor(red, yAxisGreen, zAxisBlue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02());
-            bufferBuilder.addVertex(matrix4f, minX, minY, minZ).setColor(xAxisRed, green, zAxisBlue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12());
-            bufferBuilder.addVertex(matrix4f, minX, maxY, minZ).setColor(xAxisRed, green, zAxisBlue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12());
-            bufferBuilder.addVertex(matrix4f, minX, minY, minZ).setColor(xAxisRed, yAxisGreen, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22());
-            bufferBuilder.addVertex(matrix4f, minX, minY, maxZ).setColor(xAxisRed, yAxisGreen, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22());
-            bufferBuilder.addVertex(matrix4f, maxX, minY, minZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12());
-            bufferBuilder.addVertex(matrix4f, maxX, maxY, minZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12());
-            bufferBuilder.addVertex(matrix4f, maxX, maxY, minZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m00(), -matrix4f.m01(), -matrix4f.m02());
-            bufferBuilder.addVertex(matrix4f, minX, maxY, minZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m00(), -matrix4f.m01(), -matrix4f.m02());
-            bufferBuilder.addVertex(matrix4f, minX, maxY, minZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22());
-            bufferBuilder.addVertex(matrix4f, minX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22());
-            bufferBuilder.addVertex(matrix4f, minX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m10(), -matrix4f.m11(), -matrix4f.m12());
-            bufferBuilder.addVertex(matrix4f, minX, minY, maxZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m10(), -matrix4f.m11(), -matrix4f.m12());
-            bufferBuilder.addVertex(matrix4f, minX, minY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02());
-            bufferBuilder.addVertex(matrix4f, maxX, minY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02());
-            bufferBuilder.addVertex(matrix4f, maxX, minY, maxZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m20(), -matrix4f.m21(), -matrix4f.m22());
-            bufferBuilder.addVertex(matrix4f, maxX, minY, minZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m20(), -matrix4f.m21(), -matrix4f.m22());
-            bufferBuilder.addVertex(matrix4f, minX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02());
-            bufferBuilder.addVertex(matrix4f, maxX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02());
-            bufferBuilder.addVertex(matrix4f, maxX, minY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12());
-            bufferBuilder.addVertex(matrix4f, maxX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12());
-            bufferBuilder.addVertex(matrix4f, maxX, maxY, minZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22());
-            bufferBuilder.addVertex(matrix4f, maxX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22());
+            bufferBuilder.addVertex(matrix4f, minX, minY, minZ).setColor(red, yAxisGreen, zAxisBlue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, minY, minZ).setColor(red, yAxisGreen, zAxisBlue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, minY, minZ).setColor(xAxisRed, green, zAxisBlue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, maxY, minZ).setColor(xAxisRed, green, zAxisBlue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, minY, minZ).setColor(xAxisRed, yAxisGreen, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, minY, maxZ).setColor(xAxisRed, yAxisGreen, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, minY, minZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, maxY, minZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, maxY, minZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m00(), -matrix4f.m01(), -matrix4f.m02()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, maxY, minZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m00(), -matrix4f.m01(), -matrix4f.m02()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, maxY, minZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m10(), -matrix4f.m11(), -matrix4f.m12()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, minY, maxZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m10(), -matrix4f.m11(), -matrix4f.m12()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, minY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, minY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, minY, maxZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m20(), -matrix4f.m21(), -matrix4f.m22()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, minY, minZ).setColor(red, green, blue, alpha).setNormal(-matrix4f.m20(), -matrix4f.m21(), -matrix4f.m22()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, minX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m00(), matrix4f.m01(), matrix4f.m02()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, minY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m10(), matrix4f.m11(), matrix4f.m12()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, maxY, minZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22()).setLineWidth(this.lineThickness);
+            bufferBuilder.addVertex(matrix4f, maxX, maxY, maxZ).setColor(red, green, blue, alpha).setNormal(matrix4f.m20(), matrix4f.m21(), matrix4f.m22()).setLineWidth(this.lineThickness);
 
             try (MeshData meshData = bufferBuilder.build()) {
                 if (showThroughWalls && (flags & FLAG_FULL_OPACITY_BEHIND_WALLS) == 0) {
-                    render.accept(new RenderJob(meshData, CustomRenderTypes.DEBUG_LINE.apply((double) this.lineThickness), WHITE));
-                    render.accept(new RenderJob(meshData, CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH.apply((double) this.lineThickness), QUARTER_OPACITY));
+                    render.accept(new RenderJob(meshData, CustomRenderTypes.DEBUG_LINE, WHITE));
+                    render.accept(new RenderJob(meshData, CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH, QUARTER_OPACITY));
                 } else {
-                    var function = showThroughWalls ? CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH : CustomRenderTypes.DEBUG_LINE;
-                    RenderType renderType = function.apply((double) this.lineThickness);
+                    RenderType renderType = showThroughWalls ? CustomRenderTypes.DEBUG_LINE_WITHOUT_DEPTH : CustomRenderTypes.DEBUG_LINE;
                     render.accept(new RenderJob(meshData, renderType, WHITE));
                 }
             }

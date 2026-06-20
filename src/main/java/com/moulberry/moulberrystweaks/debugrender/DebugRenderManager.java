@@ -6,37 +6,23 @@ import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.moulberry.moulberrystweaks.debugrender.shapes.DebugShape;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.ChatScreen;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.DynamicUniforms;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.fog.FogRenderer;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class DebugRenderManager {
@@ -47,7 +33,7 @@ public class DebugRenderManager {
     public static final LinkedHashSet<String> availableNamespaces = new LinkedHashSet<>();
     public static final LinkedHashSet<String> hiddenNamespaces = new LinkedHashSet<>();
 
-    private static final Map<ResourceLocation, RenderedShapeInstance> shapeInstancesByResourceLocation = new LinkedHashMap<>();
+    private static final Map<Identifier, RenderedShapeInstance> shapeInstancesByIdentifier = new LinkedHashMap<>();
     private static final List<RenderedShapeInstance> shapeInstances = new ArrayList<>();
 
     public static volatile boolean updateSortedShapeInstances = false;
@@ -55,23 +41,23 @@ public class DebugRenderManager {
     private static final EnumMap<DebugShape.RenderMethod, List<RenderedShapeInstance>> sortedShapeInstancesByRenderMethod = new EnumMap<>(DebugShape.RenderMethod.class);
     private static Vec3 lastSortedPosition = Vec3.ZERO;
 
-    public static void add(Optional<ResourceLocation> resourceLocationOptional, DebugShape debugShape, int flags, int lifetime) {
+    public static void add(Optional<Identifier> resourceLocationOptional, DebugShape debugShape, int flags, int lifetime) {
         lock.lock();
         try {
             RenderedShapeInstance renderedShapeInstance = new RenderedShapeInstance(resourceLocationOptional.orElse(null), debugShape, flags, lifetime);
 
             if (resourceLocationOptional.isPresent()) {
-                ResourceLocation resourceLocation = resourceLocationOptional.get();
+                Identifier resourceLocation = resourceLocationOptional.get();
 
                 availableNamespaces.add(resourceLocation.getNamespace());
 
-                RenderedShapeInstance old = shapeInstancesByResourceLocation.get(resourceLocation);
+                RenderedShapeInstance old = shapeInstancesByIdentifier.get(resourceLocation);
                 if (old != null) {
                     shapeInstances.remove(old);
                     old.close();
                 }
 
-                shapeInstancesByResourceLocation.put(resourceLocation, renderedShapeInstance);
+                shapeInstancesByIdentifier.put(resourceLocation, renderedShapeInstance);
             }
             shapeInstances.add(renderedShapeInstance);
             updateSortedShapeInstances = true;
@@ -80,10 +66,10 @@ public class DebugRenderManager {
         }
     }
 
-    public static void remove(ResourceLocation resourceLocation) {
+    public static void remove(Identifier resourceLocation) {
         lock.lock();
         try {
-            RenderedShapeInstance instance = shapeInstancesByResourceLocation.remove(resourceLocation);
+            RenderedShapeInstance instance = shapeInstancesByIdentifier.remove(resourceLocation);
             if (instance != null) {
                 shapeInstances.remove(instance);
                 updateSortedShapeInstances = true;
@@ -104,7 +90,7 @@ public class DebugRenderManager {
             }
             shapeInstances.clear();
             updateSortedShapeInstances = true;
-            shapeInstancesByResourceLocation.clear();
+            shapeInstancesByIdentifier.clear();
             availableNamespaces.clear();
         } finally {
             lock.unlock();
@@ -150,7 +136,7 @@ public class DebugRenderManager {
     public static boolean showNamespace(String namespace) {
         boolean wasAllHidden = false;
         if (allHidden) {
-            for (ResourceLocation resourceLocation : shapeInstancesByResourceLocation.keySet()) {
+            for (Identifier resourceLocation : shapeInstancesByIdentifier.keySet()) {
                 hiddenNamespaces.add(resourceLocation.getNamespace());
             }
             allHidden = false;
@@ -171,7 +157,7 @@ public class DebugRenderManager {
         lock.lock();
         try {
             boolean isOnRenderThread = RenderSystem.isOnRenderThread();
-            shapeInstancesByResourceLocation.entrySet().removeIf(entry -> {
+            shapeInstancesByIdentifier.entrySet().removeIf(entry -> {
                 if (entry.getKey().getNamespace().equals(namespace)) {
                     RenderedShapeInstance instance = entry.getValue();
                     shapeInstances.remove(instance);
@@ -217,7 +203,7 @@ public class DebugRenderManager {
         }
     }
 
-    public static void renderGui(GuiGraphics guiGraphics) {
+    public static void renderGui(GuiGraphicsExtractor guiGraphics) {
         RenderSystem.assertOnRenderThread();
 
         if (!pendingCloseOnRenderThread.isEmpty()) {
@@ -302,13 +288,11 @@ public class DebugRenderManager {
                     }
                 }
 
-                RenderPipeline renderPipeline = ((RenderType.CompositeRenderType)renderType).renderPipeline;
+                RenderPipeline renderPipeline = renderType.state.pipeline;
 
                 RenderSystem.AutoStorageIndexBuffer sequentialBuffer = RenderSystem.getSequentialBuffer(renderType.mode());
                 GpuBuffer sharedIndexBuffer = maxIndex == 0 ? null : sequentialBuffer.getBuffer(maxIndex);
                 VertexFormat.IndexType sharedIndexType = maxIndex == 0 ? null : sequentialBuffer.type();
-
-                renderType.setupRenderState();
 
                 try (RenderPass renderPass = RenderSystem.getDevice()
                                                          .createCommandEncoder()
@@ -317,8 +301,6 @@ public class DebugRenderManager {
                     RenderSystem.bindDefaultUniforms(renderPass);
                     renderPass.drawMultipleIndexed(draws, sharedIndexBuffer, sharedIndexType, gpuBufferSlices.length == 0 ? List.of() : List.of("DynamicTransforms"), gpuBufferSlices);
                 }
-
-                renderType.clearRenderState();
             }
 
             RenderSystem.setShaderFog(oldFog);
@@ -326,7 +308,7 @@ public class DebugRenderManager {
     }
 
     private static void updateRenderLists(@Nullable Camera camera) {
-        boolean resortDueToMovement = camera != null && camera.getPosition().distanceToSqr(lastSortedPosition) > 0.25*0.25;
+        boolean resortDueToMovement = camera != null && camera.position().distanceToSqr(lastSortedPosition) > 0.25*0.25;
         boolean updateDueToAddOrRemove = updateSortedShapeInstances;
         updateSortedShapeInstances = false;
 
@@ -340,7 +322,7 @@ public class DebugRenderManager {
                     }
                 }
                 if (camera != null) {
-                    lastSortedPosition = camera.getPosition();
+                    lastSortedPosition = camera.position();
                 }
                 Comparator<RenderedShapeInstance> comparator = Comparator.<RenderedShapeInstance>comparingDouble(instance -> -lastSortedPosition.distanceToSqr(instance.center))
                     .thenComparing(instance -> Objects.toString(instance.resourceLocation));
@@ -365,7 +347,7 @@ public class DebugRenderManager {
                 if (instance.lifetime > 0) {
                     instance.lifetime -= 1;
                     if (instance.lifetime == 0) {
-                        shapeInstancesByResourceLocation.values().remove(instance);
+                        shapeInstancesByIdentifier.values().remove(instance);
                         updateSortedShapeInstances = true;
                         instance.close();
                         return true;

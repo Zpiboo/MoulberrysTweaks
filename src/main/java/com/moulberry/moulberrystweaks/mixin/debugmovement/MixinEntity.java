@@ -1,7 +1,7 @@
 package com.moulberry.moulberrystweaks.mixin.debugmovement;
 
 import com.moulberry.moulberrystweaks.ext.LocalPlayerExt;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -40,7 +40,7 @@ public abstract class MixinEntity {
             localPlayerExt.mt$getDebugMovementData().hasSprintSpeedModifier = false;
             if ((Object) this instanceof LivingEntity livingEntity) {
                 for (AttributeModifier modifier : livingEntity.getAttribute(Attributes.MOVEMENT_SPEED).getModifiers()) {
-                    if (modifier.is(ResourceLocation.withDefaultNamespace("sprinting"))) {
+                    if (modifier.is(Identifier.withDefaultNamespace("sprinting"))) {
                         localPlayerExt.mt$getDebugMovementData().hasSprintSpeedModifier = true;
                     }
                 }

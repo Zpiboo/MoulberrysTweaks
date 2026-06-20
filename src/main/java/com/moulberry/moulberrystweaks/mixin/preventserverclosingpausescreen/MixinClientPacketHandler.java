@@ -47,7 +47,15 @@ public abstract class MixinClientPacketHandler extends ClientCommonPacketListene
         AccessibilityOptionsScreen.class
     );
 
-    @Inject(method = "handleContainerClose", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/util/thread/BlockableEventLoop;)V", shift = At.Shift.AFTER), cancellable = true)
+    @Inject(
+            method = "handleContainerClose",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/network/PacketProcessor;)V",
+                    shift = At.Shift.AFTER
+            ),
+            cancellable = true
+    )
     public void handleContainerClose(ClientboundContainerClosePacket packet, CallbackInfo ci) {
         if (MoulberrysTweaks.config.gameplay.preventServerClosingPauseScreen) {
             Screen currentScreen = this.minecraft.screen;
@@ -57,7 +65,14 @@ public abstract class MixinClientPacketHandler extends ClientCommonPacketListene
         }
     }
 
-    @Inject(method = "handleOpenScreen", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/util/thread/BlockableEventLoop;)V", shift = At.Shift.AFTER))
+    @Inject(
+            method = "handleOpenScreen",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/network/protocol/PacketUtils;ensureRunningOnSameThread(Lnet/minecraft/network/protocol/Packet;Lnet/minecraft/network/PacketListener;Lnet/minecraft/network/PacketProcessor;)V",
+                    shift = At.Shift.AFTER
+            )
+    )
     public void handleOpenScreenHead(ClientboundOpenScreenPacket packet, CallbackInfo ci, @Share("oldScreenRef") LocalRef<Screen> oldScreenRef) {
         oldScreenRef.set(this.minecraft.screen);
     }

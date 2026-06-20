@@ -2,11 +2,11 @@ package com.moulberry.moulberrystweaks.mixin.addopenreportbutton;
 
 import com.moulberry.moulberrystweaks.MoulberrysTweaks;
 import com.moulberry.moulberrystweaks.Translations;
-import net.minecraft.Util;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.layouts.LinearLayout;
 import net.minecraft.client.gui.screens.DisconnectedScreen;
 import net.minecraft.network.DisconnectionDetails;
+import net.minecraft.util.Util;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

@@ -15,7 +15,7 @@
     "autovanish.MixinEquipmentLayerRenderer",
     "autovanish.MixinHumanoidArmorLayer",
     "autovanish.MixinLivingEntityRenderer",
-    "autovanish.MixinPlayerRenderState",
+    "autovanish.MixinAvatarRenderState",
     "confirmdisconnect.MixinPauseScreen",
     "crashfix.MixinClientPacketListener",
     "debugmovement.MixinEntity",

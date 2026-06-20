@@ -4,10 +4,10 @@ import com.moulberry.moulberrystweaks.DebugMovementData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public record DebugMovementDataPacket(DebugMovementData debugMovementData) implements CustomPacketPayload {
-    public static final ResourceLocation PACKET_ID = ResourceLocation.fromNamespaceAndPath("moulberrystweaks", "debug_movement_data");
+    public static final Identifier PACKET_ID = Identifier.fromNamespaceAndPath("moulberrystweaks", "debug_movement_data");
     public static final Type<DebugMovementDataPacket> TYPE = new Type<>(PACKET_ID);
 
     public static final StreamCodec<FriendlyByteBuf, DebugMovementDataPacket> STREAM_CODEC = new DebugMovementDataPacketStreamCodec();
@@ -26,14 +26,14 @@ public record DebugMovementDataPacket(DebugMovementData debugMovementData) imple
         @Override
         public void encode(FriendlyByteBuf friendlyByteBuf, DebugMovementDataPacket debugMovementDataPacket) {
             DebugMovementData data = debugMovementDataPacket.debugMovementData();
-            friendlyByteBuf.writeVec3(data.baseTickVelocity);
-            friendlyByteBuf.writeVec3(data.localPlayerAiStepVelocity);
-            friendlyByteBuf.writeVec3(data.livingAiStepVelocity);
-            friendlyByteBuf.writeVec3(data.travelVelocity);
-            friendlyByteBuf.writeVec3(data.moveRelativeVelocity);
-            friendlyByteBuf.writeVec3(data.moveVelocity);
-            friendlyByteBuf.writeVec3(data.afterTravelVelocity);
-            friendlyByteBuf.writeVec3(data.moveInput);
+            friendlyByteBuf.writeVector3f(data.baseTickVelocity.toVector3f());
+            friendlyByteBuf.writeVector3f(data.localPlayerAiStepVelocity.toVector3f());
+            friendlyByteBuf.writeVector3f(data.livingAiStepVelocity.toVector3f());
+            friendlyByteBuf.writeVector3f(data.travelVelocity.toVector3f());
+            friendlyByteBuf.writeVector3f(data.moveRelativeVelocity.toVector3f());
+            friendlyByteBuf.writeVector3f(data.moveVelocity.toVector3f());
+            friendlyByteBuf.writeVector3f(data.afterTravelVelocity.toVector3f());
+            friendlyByteBuf.writeVector3f(data.moveInput.toVector3f());
             friendlyByteBuf.writeFloat(data.moveRelativeSpeed);
             friendlyByteBuf.writeBoolean(data.isInWater);
             friendlyByteBuf.writeBoolean(data.isInLava);

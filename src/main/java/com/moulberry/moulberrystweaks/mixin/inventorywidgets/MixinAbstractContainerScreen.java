@@ -1,12 +1,14 @@
 package com.moulberry.moulberrystweaks.mixin.inventorywidgets;
 
+import com.moulberry.moulberrystweaks.MoulberrysTweaks;
 import com.moulberry.moulberrystweaks.widget.ActiveWidgets;
 import com.moulberry.moulberrystweaks.widget.ComponentViewerWidget;
-import com.moulberry.moulberrystweaks.MoulberrysTweaks;
 import com.moulberry.moulberrystweaks.widget.FloatingTextWidget;
 import com.moulberry.moulberrystweaks.widget.PacketViewerWidget;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.inventory.Slot;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -40,14 +42,14 @@ public class MixinAbstractContainerScreen {
     }
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
-    public void keyPressed(int key, int scancode, int modifiers, CallbackInfoReturnable<Boolean> cir) {
+    public void keyPressed(KeyEvent event, CallbackInfoReturnable<Boolean> cir) {
         for (FloatingTextWidget widget : ActiveWidgets.activeWidgets) {
-            if (widget.keyPressed(key, scancode, modifiers)) {
+            if (widget.keyPressed(event.key(), event.scancode(), event.modifiers())) {
                 cir.setReturnValue(true);
                 return;
             }
         }
-        if (MoulberrysTweaks.viewComponentsKeyBind != null && MoulberrysTweaks.viewComponentsKeyBind.matches(key, scancode)) {
+        if (MoulberrysTweaks.viewComponentsKeyBind != null && MoulberrysTweaks.viewComponentsKeyBind.matches(event)) {
             for (FloatingTextWidget widget : ActiveWidgets.activeWidgets) {
                 if (widget instanceof ComponentViewerWidget componentViewerWidget) {
                     if (this.hoveredSlot != null) {
@@ -66,7 +68,7 @@ public class MixinAbstractContainerScreen {
             }
             cir.setReturnValue(true);
         }
-        if (MoulberrysTweaks.viewPacketsKeyBind != null && MoulberrysTweaks.viewPacketsKeyBind.matches(key, scancode)) {
+        if (MoulberrysTweaks.viewPacketsKeyBind != null && MoulberrysTweaks.viewPacketsKeyBind.matches(event)) {
             boolean removed = ActiveWidgets.activeWidgets.removeIf(widget -> widget instanceof PacketViewerWidget);
             if (removed) {
                 ActiveWidgets.logPackets = false;
@@ -79,9 +81,9 @@ public class MixinAbstractContainerScreen {
     }
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    public void mouseClicked(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+    public void mouseClicked(MouseButtonEvent event, boolean doubleClick, CallbackInfoReturnable<Boolean> cir) {
         for (FloatingTextWidget widget : ActiveWidgets.activeWidgets) {
-            if (widget.mouseClicked(mouseX, mouseY, button)) {
+            if (widget.mouseClicked(event.x(), event.y(), event.button())) {
                 cir.setReturnValue(true);
                 return;
             }
@@ -89,9 +91,9 @@ public class MixinAbstractContainerScreen {
     }
 
     @Inject(method = "mouseReleased", at = @At("HEAD"), cancellable = true)
-    public void mouseReleased(double mouseX, double mouseY, int button, CallbackInfoReturnable<Boolean> cir) {
+    public void mouseReleased(MouseButtonEvent event, CallbackInfoReturnable<Boolean> cir) {
         for (FloatingTextWidget widget : ActiveWidgets.activeWidgets) {
-            if (widget.mouseReleased(mouseX, mouseY, button)) {
+            if (widget.mouseReleased(event.x(), event.y(), event.button())) {
                 cir.setReturnValue(true);
                 return;
             }
@@ -108,8 +110,8 @@ public class MixinAbstractContainerScreen {
         }
     }
 
-    @Inject(method = "render", at = @At("RETURN"))
-    public void afterRender(GuiGraphics guiGraphics, int mouseX, int mouseY, float f, CallbackInfo ci) {
+    @Inject(method = "extractRenderState", at = @At("RETURN"))
+    public void afterRender(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float f, CallbackInfo ci) {
         // Render in reverse order so that the first widget renders on top
         for (int i = ActiveWidgets.activeWidgets.size()-1; i >= 0; i--) {
             FloatingTextWidget widget = ActiveWidgets.activeWidgets.get(i);

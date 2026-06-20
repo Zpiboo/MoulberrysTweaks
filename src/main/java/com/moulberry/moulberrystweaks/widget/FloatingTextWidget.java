@@ -1,39 +1,23 @@
 package com.moulberry.moulberrystweaks.widget;
 
-import com.google.common.hash.HashCode;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.moulberry.moulberrystweaks.formatting.FormattedSnbtPrinter;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.component.TypedDataComponent;
+import net.minecraft.gizmos.TextGizmo;
 import net.minecraft.locale.Language;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
-import net.minecraft.resources.RegistryOps;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.util.HashOps;
-import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.OptionalDouble;
 
 public class FloatingTextWidget {
 
@@ -205,7 +189,7 @@ public class FloatingTextWidget {
         }
     }
 
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    public void render(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY) {
         this.wasHovering = this.isHovering(mouseX, mouseY);
         if (this.lines != null) {
             if (this.windowX == Integer.MIN_VALUE) {
@@ -238,7 +222,7 @@ public class FloatingTextWidget {
 
             if (maxLineIndex > this.lines.size()-1) maxLineIndex = this.lines.size()-1;
 
-            Style hoveredStyle = null;
+            List<FormattedCharSequence> hoveredText = null;
 
             boolean showTooltip = this.wasHovering && this.moveGrabOffsetX == Integer.MIN_VALUE && this.resizeGrabOffsetX == Integer.MIN_VALUE;
 
@@ -246,11 +230,11 @@ public class FloatingTextWidget {
                 FormattedText line = this.lines.get(i);
 
                 if (showTooltip && mouseY >= y && mouseY < y + this.font.lineHeight) {
-                    hoveredStyle = this.font.getSplitter().componentStyleAtWidth(line, mouseX - (this.windowX + PADDING));
+                    hoveredText = this.font.split(line, mouseX - (this.windowX + PADDING));
                 }
 
                 var formattedCharSequence = Language.getInstance().getVisualOrder(line);
-                guiGraphics.drawString(this.font, formattedCharSequence, this.windowX + PADDING, y, -1);
+                guiGraphics.text(this.font, formattedCharSequence, this.windowX + PADDING, y, -1);
                 int lineWidth = this.font.width(formattedCharSequence);
                 y += this.font.lineHeight;
                 maxX = Math.max(maxX, lineWidth);
@@ -258,13 +242,14 @@ public class FloatingTextWidget {
 
             guiGraphics.disableScissor();
 
-            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, ResourceLocation.fromNamespaceAndPath("minecraft", "popup/background"),
+            guiGraphics.blitSprite(RenderPipelines.GUI_TEXTURED, Identifier.fromNamespaceAndPath("minecraft", "popup/background"),
                 this.windowX, this.windowY, this.windowWidth, this.windowHeight);
 
-            guiGraphics.drawString(this.font, this.name, this.windowX+10, this.windowY-this.font.lineHeight, -1);
+            guiGraphics.text(this.font, this.name, this.windowX+10, this.windowY-this.font.lineHeight, -1);
 
-            if (hoveredStyle != null) {
-                guiGraphics.renderComponentHoverEffect(this.font, hoveredStyle, mouseX, mouseY);
+            if (hoveredText != null) {
+                // TODO: ensure this was properly updated for 26.1 (in particular that the correct method was chosen here)
+                guiGraphics.setTooltipForNextFrame(this.font, hoveredText, mouseX, mouseY);
             }
         }
     }

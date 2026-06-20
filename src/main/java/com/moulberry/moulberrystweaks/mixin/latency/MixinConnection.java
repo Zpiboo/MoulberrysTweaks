@@ -6,6 +6,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.Connection;
 import net.minecraft.network.DisconnectionDetails;
@@ -14,6 +15,8 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.PacketFlow;
 import net.minecraft.network.protocol.game.ClientboundPlayerChatPacket;
 import net.minecraft.network.protocol.game.ServerboundChatPacket;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -62,7 +65,11 @@ public abstract class MixinConnection {
         if (this.receiving == PacketFlow.CLIENTBOUND && this.channel != null && this.channel.isOpen() &&
                 this.delayedDisconnect == null && this.disconnectionDetails == null) {
             LocalPlayer player = Minecraft.getInstance().player;
-            return player != null && player.hasClientLoaded() && player.hasPermissions(2) && MoulberrysTweaks.additionalLatencyMs > 0;
+            ClientPacketListener connection = Minecraft.getInstance().getConnection();
+            return
+                    player != null && player.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)) &&
+                    connection != null && connection.hasClientLoaded() &&
+                    MoulberrysTweaks.additionalLatencyMs > 0;
         }
         return false;
     }

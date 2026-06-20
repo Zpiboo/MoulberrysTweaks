@@ -9,12 +9,12 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Optional;
 
 public record AutoVanishPlayersSetPacket(ServerState serverState) implements CustomPacketPayload {
-    public static final Type<AutoVanishPlayersSetPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("autovanishplayers", "set"));
+    public static final Type<AutoVanishPlayersSetPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath("autovanishplayers", "set"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, AutoVanishPlayersSetPacket> STREAM_CODEC = StreamCodec.composite(
         ServerState.STREAM_CODEC,

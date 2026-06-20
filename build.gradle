@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version '1.10-SNAPSHOT'
+	id 'net.fabricmc.fabric-loom' version '1.16-SNAPSHOT'
 	id 'maven-publish'
 }
 
@@ -46,22 +46,22 @@ loom {
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings loom.layered() {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-1.21.5:2025.04.19@zip")
-    }
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+//    mappings loom.layered() {
+//        officialMojangMappings()
+//        parchment("org.parchmentmc.data:parchment-1.21.5:2025.04.19@zip")
+//    }
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-    include(modImplementation("com.moulberry:lattice:1.2.14")) {
+    include(implementation("com.moulberry:lattice:2.0.1+26.1")) {
         attributes {
             attribute(Attribute.of("earth.terrarium.cloche.modLoader", String), "fabric")
         }
     }
 
-    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:1.1.2")
+    runtimeOnly("me.djtheredstoner:DevAuth-fabric:1.1.2")
 
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-    modCompileOnly("maven.modrinth:modmenu:xhN1IvHi")
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+    compileOnly("maven.modrinth:modmenu:p7gjPPpV")
 }
 
 processResources {
@@ -73,7 +73,7 @@ processResources {
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 21
+	it.options.release = 25
 }
 
 java {
@@ -82,8 +82,8 @@ java {
 	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
-	sourceCompatibility = JavaVersion.VERSION_21
-	targetCompatibility = JavaVersion.VERSION_21
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
 }
 
 jar {

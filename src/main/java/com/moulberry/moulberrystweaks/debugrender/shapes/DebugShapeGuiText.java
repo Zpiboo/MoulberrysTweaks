@@ -3,7 +3,7 @@ package com.moulberry.moulberrystweaks.debugrender.shapes;
 import com.moulberry.moulberrystweaks.debugrender.GuiRenderContext;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
@@ -57,9 +57,9 @@ public record DebugShapeGuiText(List<Component> components, byte location) imple
     }
 
     @Override
-    public void renderGuiImmediate(GuiGraphics guiGraphics, GuiRenderContext context, int flags) {
+    public void renderGuiImmediate(GuiGraphicsExtractor GuiGraphicsExtractor, GuiRenderContext context, int flags) {
         Font font = Minecraft.getInstance().font;
-        int screenWidth = guiGraphics.guiWidth();
+        int screenWidth = GuiGraphicsExtractor.guiWidth();
         int maxWidth = screenWidth*5/4;
 
         if (this.location != LOCATION_TOP_LEFT && this.location != LOCATION_TOP_RIGHT && this.location != LOCATION_BOTTOM_LEFT && this.location != LOCATION_BOTTOM_RIGHT) {
@@ -80,25 +80,25 @@ public record DebugShapeGuiText(List<Component> components, byte location) imple
                         context.topLeftLines += 1;
                     }
                     case LOCATION_TOP_RIGHT -> {
-                        x = guiGraphics.guiWidth() - 2 - font.width(line);
+                        x = GuiGraphicsExtractor.guiWidth() - 2 - font.width(line);
                         y = 2 + context.topRightLines * font.lineHeight;
                         context.topRightLines += 1;
                     }
                     case LOCATION_BOTTOM_LEFT ->  {
                         x = 2;
-                        y = guiGraphics.guiHeight() - (2 + context.bottomLeftLines * font.lineHeight) - font.lineHeight;
+                        y = GuiGraphicsExtractor.guiHeight() - (2 + context.bottomLeftLines * font.lineHeight) - font.lineHeight;
                         context.bottomLeftLines += 1;
                     }
                     case LOCATION_BOTTOM_RIGHT -> {
-                        x = guiGraphics.guiWidth() - 2 - font.width(line);
-                        y = guiGraphics.guiHeight() - (2 + context.bottomRightLines * font.lineHeight) - font.lineHeight;
+                        x = GuiGraphicsExtractor.guiWidth() - 2 - font.width(line);
+                        y = GuiGraphicsExtractor.guiHeight() - (2 + context.bottomRightLines * font.lineHeight) - font.lineHeight;
                         context.bottomRightLines += 1;
                     }
                     default -> {
                         return;
                     }
                 }
-                guiGraphics.drawString(font, line, x, y, -1);
+                GuiGraphicsExtractor.text(font, line, x, y, -1);
             }
         }
     }

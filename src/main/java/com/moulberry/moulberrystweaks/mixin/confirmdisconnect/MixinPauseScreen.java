@@ -2,6 +2,7 @@ package com.moulberry.moulberrystweaks.mixin.confirmdisconnect;
 
 import com.moulberry.moulberrystweaks.MoulberrysTweaks;
 import com.moulberry.moulberrystweaks.Translations;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.PauseScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -12,6 +13,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(PauseScreen.class)
@@ -28,13 +30,20 @@ public class MixinPauseScreen extends Screen {
         super(title);
     }
 
-    @Inject(method = "method_19836", at = @At("HEAD"), cancellable = true)
-    public void onDisconnect(CallbackInfo ci) {
+    @Redirect(
+            method = "lambda$createPauseMenu$7",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/client/Minecraft;disconnectFromWorld(Lnet/minecraft/network/chat/Component;)V"
+            )
+    )
+    public void onDisconnect(Minecraft instance, Component message) {
         if (MoulberrysTweaks.config.gameplay.confirmDisconnect && this.disconnectButton != null && !this.confirmingDisconnect && !this.minecraft.isLocalServer()) {
             this.disconnectButton.active = true;
             this.disconnectButton.setMessage(Translations.CONFIRM_DISCONNECT);
             this.confirmingDisconnect = true;
-            ci.cancel();
+        } else {
+            instance.disconnectFromWorld(message);
         }
     }
 

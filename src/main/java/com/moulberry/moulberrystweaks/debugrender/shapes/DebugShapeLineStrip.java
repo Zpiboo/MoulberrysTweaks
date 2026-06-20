@@ -1,12 +1,8 @@
 package com.moulberry.moulberrystweaks.debugrender.shapes;
 
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.*;
 import com.moulberry.moulberrystweaks.debugrender.CustomRenderTypes;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -53,7 +49,7 @@ public record DebugShapeLineStrip(List<Vec3> points, int argb, float lineThickne
             float green = ((this.argb >> 8) & 0xFF)/255f;
             float blue = (this.argb & 0xFF)/255f;
 
-            BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.LINE_STRIP, DefaultVertexFormat.POSITION_COLOR_NORMAL);
+            BufferBuilder bufferBuilder = Tesselator.getInstance().begin(VertexFormat.Mode.DEBUG_LINE_STRIP, DefaultVertexFormat.POSITION_COLOR_NORMAL);
 
             Vec3 last = this.points.get(1);
             for (Vec3 point : this.points) {
@@ -71,16 +67,17 @@ public record DebugShapeLineStrip(List<Vec3> points, int argb, float lineThickne
                 normalZ *= invLength;
 
                 bufferBuilder.addVertex((float)(point.x - center.x), (float)(point.y - center.y), (float)(point.z - center.z))
-                              .setColor(red, green, blue, alpha)
-                              .setNormal(normalX, normalY, normalZ);
+                        .setColor(red, green, blue, alpha)
+                        .setNormal(normalX, normalY, normalZ)
+                        .setLineWidth(this.lineThickness);
             }
 
             try (MeshData meshData = bufferBuilder.build()) {
                 if (showThroughWalls && (flags & FLAG_FULL_OPACITY_BEHIND_WALLS) == 0) {
-                    render.accept(new RenderJob(meshData, CustomRenderTypes.LINE_STRIP.apply((double) this.lineThickness), WHITE));
-                    render.accept(new RenderJob(meshData, CustomRenderTypes.LINE_STRIP_WITHOUT_DEPTH.apply((double) this.lineThickness), QUARTER_OPACITY));
+                    render.accept(new RenderJob(meshData, CustomRenderTypes.LINE_STRIP, WHITE));
+                    render.accept(new RenderJob(meshData, CustomRenderTypes.LINE_STRIP_WITHOUT_DEPTH, QUARTER_OPACITY));
                 } else {
-                    RenderType renderType = showThroughWalls ? CustomRenderTypes.LINE_STRIP_WITHOUT_DEPTH.apply((double) this.lineThickness) : CustomRenderTypes.LINE_STRIP.apply((double) this.lineThickness);
+                    RenderType renderType = showThroughWalls ? CustomRenderTypes.LINE_STRIP_WITHOUT_DEPTH : CustomRenderTypes.LINE_STRIP;
                     render.accept(new RenderJob(meshData, renderType, WHITE));
                 }
             }

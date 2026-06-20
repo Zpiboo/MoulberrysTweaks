@@ -5,10 +5,10 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public class DebugRenderClearPacket implements CustomPacketPayload {
-    public static final Type<DebugRenderClearPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("debugrender", "clear"));
+    public static final Type<DebugRenderClearPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath("debugrender", "clear"));
     public static DebugRenderClearPacket INSTANCE = new DebugRenderClearPacket();
 
     private DebugRenderClearPacket() {

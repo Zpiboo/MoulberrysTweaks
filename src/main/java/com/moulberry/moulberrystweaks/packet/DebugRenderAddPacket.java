@@ -7,15 +7,15 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Optional;
 
-public record DebugRenderAddPacket(Optional<ResourceLocation> resourceLocation, DebugShape debugShape, int flags, int lifetime) implements CustomPacketPayload {
-    public static final Type<DebugRenderAddPacket> TYPE = new Type<>(ResourceLocation.fromNamespaceAndPath("debugrender", "add"));
+public record DebugRenderAddPacket(Optional<Identifier> resourceLocation, DebugShape debugShape, int flags, int lifetime) implements CustomPacketPayload {
+    public static final Type<DebugRenderAddPacket> TYPE = new Type<>(Identifier.fromNamespaceAndPath("debugrender", "add"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, DebugRenderAddPacket> STREAM_CODEC = StreamCodec.composite(
-        ByteBufCodecs.optional(ResourceLocation.STREAM_CODEC),
+        ByteBufCodecs.optional(Identifier.STREAM_CODEC),
         DebugRenderAddPacket::resourceLocation,
         DebugShape.STREAM_CODEC,
         DebugRenderAddPacket::debugShape,

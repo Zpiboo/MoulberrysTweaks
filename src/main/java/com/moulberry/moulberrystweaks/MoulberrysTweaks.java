@@ -12,24 +12,18 @@ import com.moulberry.lattice.Lattice;
 import com.moulberry.lattice.element.LatticeElements;
 import com.moulberry.moulberrystweaks.config.MoulberrysTweaksConfig;
 import com.moulberry.moulberrystweaks.debugrender.DebugRenderManager;
-import com.moulberry.moulberrystweaks.packet.AutoVanishPlayersSetPacket;
-import com.moulberry.moulberrystweaks.packet.DebugMovementDataPacket;
-import com.moulberry.moulberrystweaks.packet.DebugRenderAddPacket;
-import com.moulberry.moulberrystweaks.packet.DebugRenderClearNamespacePacket;
-import com.moulberry.moulberrystweaks.packet.DebugRenderClearPacket;
-import com.moulberry.moulberrystweaks.packet.DebugRenderRemovePacket;
+import com.moulberry.moulberrystweaks.packet.*;
 import com.moulberry.moulberrystweaks.widget.ActiveWidgets;
 import net.fabricmc.api.ModInitializer;
-
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLevelEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientWorldEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.networking.v1.C2SPlayChannelEvents;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.client.networking.v1.ServerboundPlayChannelEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
@@ -38,17 +32,21 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GlyphSource;
 import net.minecraft.client.gui.font.FontManager;
 import net.minecraft.client.gui.font.FontSet;
 import net.minecraft.client.gui.screens.LoadingOverlay;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.chat.FontDescription;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.item.ItemStack;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,6 +60,8 @@ import java.util.Set;
 
 public class MoulberrysTweaks implements ModInitializer {
 	public static final String MOD_ID = "moulberrystweaks";
+
+    public static final KeyMapping.Category MOD_KEYBINDS = KeyMapping.Category.register(makeId("keybind"));
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
     public static Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -83,15 +83,19 @@ public class MoulberrysTweaks implements ModInitializer {
 
     public static long additionalLatencyMs = 0;
 
+    public static Identifier makeId(String path) {
+        return Identifier.fromNamespaceAndPath(MOD_ID, path);
+    }
+
 	@Override
 	public void onInitialize() {
 		LOGGER.info("Initializing Moulberry's Tweaks");
 
         config = MoulberrysTweaksConfig.loadFromDefaultFolder();
-        viewComponentsKeyBind = KeyBindingHelper.registerKeyBinding(new KeyMapping("moulberrystweaks.keybind.view_components",
-            InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "moulberrystweaks.keybind"));
-        viewPacketsKeyBind = KeyBindingHelper.registerKeyBinding(new KeyMapping("moulberrystweaks.keybind.view_packets",
-            InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), "moulberrystweaks.keybind"));
+        viewComponentsKeyBind = KeyMappingHelper.registerKeyMapping(new KeyMapping("moulberrystweaks.keybind.view_components",
+            InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), MOD_KEYBINDS));
+        viewPacketsKeyBind = KeyMappingHelper.registerKeyMapping(new KeyMapping("moulberrystweaks.keybind.view_packets",
+            InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), MOD_KEYBINDS));
         config.debugging.inventory.itemComponentWidgetKeybind = viewComponentsKeyBind;
         config.debugging.inventory.packetDebugWidgetKeybind = viewPacketsKeyBind;
         configElements = LatticeElements.fromAnnotations(Component.literal("Moulberry's Tweaks"), config);
@@ -108,11 +112,11 @@ public class MoulberrysTweaks implements ModInitializer {
             additionalLatencyMs = 0;
         });
 
-        ClientWorldEvents.AFTER_CLIENT_WORLD_CHANGE.register((handler, client) -> {
+        ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((handler, client) -> {
             DebugRenderManager.clear();
         });
 
-        C2SPlayChannelEvents.REGISTER.register((handler, sender, client, channels) -> {
+        ServerboundPlayChannelEvents.REGISTER.register((handler, sender, client, channels) -> {
             if (channels.contains(DebugMovementDataPacket.PACKET_ID)) {
                 supportsDebugMovementDataPacket = true;
             }
@@ -126,8 +130,8 @@ public class MoulberrysTweaks implements ModInitializer {
             Minecraft.getInstance().schedule(() -> Lattice.performTest(configElements));
         }
 
-        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-            var command = ClientCommandManager.literal("moulberrystweaks")
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, environment) -> {
+            var command = ClientCommands.literal("moulberrystweaks")
                 .executes(commandContext -> {
                     Minecraft.getInstance().schedule(() -> Minecraft.getInstance().setScreen(
                         Lattice.createConfigScreen(configElements, config::saveToDefaultFolder, Minecraft.getInstance().screen)
@@ -138,8 +142,8 @@ public class MoulberrysTweaks implements ModInitializer {
 
             autoVanishPlayersRegistered = config.commands.autoVanishPlayers;
             if (config.commands.autoVanishPlayers) {
-                command = ClientCommandManager.literal("autovanishplayers");
-                command.then(ClientCommandManager.literal("on").executes(cmd -> {
+                command = ClientCommands.literal("autovanishplayers");
+                command.then(ClientCommands.literal("on").executes(cmd -> {
                     AutoVanishPlayers.setClientState(true);
                     switch (AutoVanishPlayers.serverState()) {
                         case CLIENT_OR_DEFAULT, ON, OFF -> cmd.getSource().sendFeedback(Component.literal("AutoVanishPlayers is now ON").withStyle(ChatFormatting.YELLOW));
@@ -148,7 +152,7 @@ public class MoulberrysTweaks implements ModInitializer {
                     }
                     return 0;
                 }));
-                command.then(ClientCommandManager.literal("off").executes(cmd -> {
+                command.then(ClientCommands.literal("off").executes(cmd -> {
                     AutoVanishPlayers.setClientState(false);
                     switch (AutoVanishPlayers.serverState()) {
                         case CLIENT_OR_DEFAULT, ON, OFF -> cmd.getSource().sendFeedback(Component.literal("AutoVanishPlayers is now OFF").withStyle(ChatFormatting.YELLOW));
@@ -172,7 +176,7 @@ public class MoulberrysTweaks implements ModInitializer {
 
             dumpHeldJsonRegistered = config.commands.dumpHeldJson;
             if (config.commands.dumpHeldJson) {
-                command = ClientCommandManager.literal("dumpheldjson")
+                command = ClientCommands.literal("dumpheldjson")
                           .executes(commandContext -> {
                               var player = commandContext.getSource().getPlayer();
                               ItemStack itemStack = player.getMainHandItem();
@@ -185,27 +189,27 @@ public class MoulberrysTweaks implements ModInitializer {
 
             generateFontWidthTableRegistered = config.commands.generateFontWidthTable;
             if (config.commands.generateFontWidthTable) {
-                command = ClientCommandManager.literal("generatefontwidthtable")
-                          .then(ClientCommandManager.argument("font", ResourceLocationArgument.id())
+                command = ClientCommands.literal("generatefontwidthtable")
+                          .then(ClientCommands.argument("font", IdentifierArgument.id())
                                                     .executes(MoulberrysTweaks::writeFontWidths));
                 dispatcher.register(command);
             }
 
             dumpPlayerAttributesRegistered = config.commands.dumpPlayerAttributes;
             if (config.commands.dumpPlayerAttributes) {
-                command = ClientCommandManager.literal("dumpplayerattributes")
+                command = ClientCommands.literal("dumpplayerattributes")
                       .executes(commandContext -> {
                           var player = commandContext.getSource().getPlayer();
                           Set<AttributeInstance> modified = player.getAttributes().getAttributesToSync();
                           if (!modified.isEmpty()) {
-                              player.displayClientMessage(Component.literal("Modified Attributes").withStyle(ChatFormatting.BOLD), false);
+                              player.sendSystemMessage(Component.literal("Modified Attributes").withStyle(ChatFormatting.BOLD));
                               for (AttributeInstance attribute : modified) {
-                                  player.displayClientMessage(Component.literal(attribute.getAttribute().unwrapKey().get().location().toString()).withStyle(ChatFormatting.UNDERLINE), false);
-                                  player.displayClientMessage(Component.literal("Base Value: " + attribute.getBaseValue()), false);
-                                  player.displayClientMessage(Component.literal("Value: " + attribute.getValue()), false);
+                                  player.sendSystemMessage(Component.literal(attribute.getAttribute().unwrapKey().get().identifier().toString()).withStyle(ChatFormatting.UNDERLINE));
+                                  player.sendSystemMessage(Component.literal("Base Value: " + attribute.getBaseValue()));
+                                  player.sendSystemMessage(Component.literal("Value: " + attribute.getValue()));
 
                                   if (!attribute.getModifiers().isEmpty()) {
-                                      player.displayClientMessage(Component.literal("Modifiers:"), false);
+                                      player.sendSystemMessage(Component.literal("Modifiers:"));
 
                                       List<AttributeModifier> addValue = new ArrayList<>();
                                       List<AttributeModifier> addMultipliedBase = new ArrayList<>();
@@ -227,24 +231,24 @@ public class MoulberrysTweaks implements ModInitializer {
                                       double value = attribute.getBaseValue();
                                       for (AttributeModifier modifier : addValue) {
                                           value += modifier.amount();
-                                          player.displayClientMessage(Component.literal("  " + modifier.id() + ": +" + modifier.amount() + " => " + value), false);
+                                          player.sendSystemMessage(Component.literal("  " + modifier.id() + ": +" + modifier.amount() + " => " + value));
 
                                       }
                                       double newValue = value;
                                       for (AttributeModifier modifier : addMultipliedBase) {
                                           newValue += value * modifier.amount();
-                                          player.displayClientMessage(Component.literal("  " + modifier.id() + ": +sum*" + modifier.amount() + " => " + newValue), false);
+                                          player.sendSystemMessage(Component.literal("  " + modifier.id() + ": +sum*" + modifier.amount() + " => " + newValue));
                                       }
                                       for (AttributeModifier modifier : addMultipliedTotal) {
                                           newValue *= 1.0 + modifier.amount();
-                                          player.displayClientMessage(Component.literal("  " + modifier.id() + ": *(1.0+" + modifier.amount()+") => " + newValue), false);
+                                          player.sendSystemMessage(Component.literal("  " + modifier.id() + ": *(1.0+" + modifier.amount()+") => " + newValue));
                                       }
 
                                       if (!unknown.isEmpty()) {
-                                          player.displayClientMessage(Component.literal("Unknown modifier type, above calculation maybe be incorrect..."), false);
+                                          player.sendSystemMessage(Component.literal("Unknown modifier type, above calculation maybe be incorrect..."));
                                       }
                                       for (AttributeModifier modifier : unknown) {
-                                          player.displayClientMessage(Component.literal("  " + modifier.id() + " (" + modifier.operation() + ") => " + modifier.amount()), false);
+                                          player.sendSystemMessage(Component.literal("  " + modifier.id() + " (" + modifier.operation() + ") => " + modifier.amount()));
                                       }
 
 
@@ -258,11 +262,11 @@ public class MoulberrysTweaks implements ModInitializer {
 
             debugRenderRegistered = config.commands.debugRender;
             if (config.commands.debugRender) {
-                var debugRenderClear = ClientCommandManager.literal("clear").executes(context -> {
+                var debugRenderClear = ClientCommands.literal("clear").executes(context -> {
                     DebugRenderManager.clear();
                     return 0;
                 });
-                var debugRenderHide = ClientCommandManager.literal("hide").executes(context -> {
+                var debugRenderHide = ClientCommands.literal("hide").executes(context -> {
                     boolean success = DebugRenderManager.hideAll();
                     if (success) {
                         context.getSource().sendFeedback(Component.literal("Hiding all debug renders").withStyle(ChatFormatting.YELLOW));
@@ -271,7 +275,7 @@ public class MoulberrysTweaks implements ModInitializer {
                     }
                     return 0;
                 });
-                debugRenderHide.then(ClientCommandManager.argument("namespace", StringArgumentType.word()).suggests((commandContext, suggestionsBuilder) -> {
+                debugRenderHide.then(ClientCommands.argument("namespace", StringArgumentType.word()).suggests((commandContext, suggestionsBuilder) -> {
                     for (String namespace : DebugRenderManager.availableNamespaces) {
                         if (!DebugRenderManager.hiddenNamespaces.contains(namespace)) {
                             suggestionsBuilder.suggest(namespace);
@@ -288,7 +292,7 @@ public class MoulberrysTweaks implements ModInitializer {
                     }
                     return 0;
                 }));
-                var debugRenderShow = ClientCommandManager.literal("show").executes(context -> {
+                var debugRenderShow = ClientCommands.literal("show").executes(context -> {
                     boolean success = DebugRenderManager.showAll();
                     if (success) {
                         context.getSource().sendFeedback(Component.literal("Showing all debug renders").withStyle(ChatFormatting.YELLOW));
@@ -297,7 +301,7 @@ public class MoulberrysTweaks implements ModInitializer {
                     }
                     return 0;
                 });
-                debugRenderShow.then(ClientCommandManager.argument("namespace", StringArgumentType.word()).suggests((commandContext, suggestionsBuilder) -> {
+                debugRenderShow.then(ClientCommands.argument("namespace", StringArgumentType.word()).suggests((commandContext, suggestionsBuilder) -> {
                     for (String namespace : DebugRenderManager.isAllHidden() ? DebugRenderManager.availableNamespaces : DebugRenderManager.hiddenNamespaces) {
                         suggestionsBuilder.suggest(namespace);
                     }
@@ -312,15 +316,15 @@ public class MoulberrysTweaks implements ModInitializer {
                     }
                     return 0;
                 }));
-                command = ClientCommandManager.literal("debugrender").then(debugRenderClear).then(debugRenderHide).then(debugRenderShow);
+                command = ClientCommands.literal("debugrender").then(debugRenderClear).then(debugRenderHide).then(debugRenderShow);
                 dispatcher.register(command);
             }
 
             setLatencyRegistered = config.commands.setLatency;
             if (config.commands.setLatency) {
-                command = ClientCommandManager.literal("setlatency")
-                                              .requires(source -> source.getPlayer() != null && source.getPlayer().hasPermissions(2))
-                                              .then(ClientCommandManager.argument("latency", IntegerArgumentType.integer(0, 5000))
+                command = ClientCommands.literal("setlatency")
+                                              .requires(source -> source.getPlayer() != null && source.getPlayer().permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
+                                              .then(ClientCommands.argument("latency", IntegerArgumentType.integer(0, 5000))
                                               .executes(commandContext -> {
                                                   additionalLatencyMs = IntegerArgumentType.getInteger(commandContext, "latency");
                                                   commandContext.getSource().sendFeedback(Component.literal("Set additional latency to: " + additionalLatencyMs + "ms"));
@@ -330,12 +334,12 @@ public class MoulberrysTweaks implements ModInitializer {
             }
         });
 
-        PayloadTypeRegistry.playC2S().register(DebugMovementDataPacket.TYPE, DebugMovementDataPacket.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(DebugRenderAddPacket.TYPE, DebugRenderAddPacket.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(DebugRenderRemovePacket.TYPE, DebugRenderRemovePacket.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(DebugRenderClearPacket.TYPE, DebugRenderClearPacket.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(DebugRenderClearNamespacePacket.TYPE, DebugRenderClearNamespacePacket.STREAM_CODEC);
-        PayloadTypeRegistry.playS2C().register(AutoVanishPlayersSetPacket.TYPE, AutoVanishPlayersSetPacket.STREAM_CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(DebugMovementDataPacket.TYPE, DebugMovementDataPacket.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DebugRenderAddPacket.TYPE, DebugRenderAddPacket.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DebugRenderRemovePacket.TYPE, DebugRenderRemovePacket.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DebugRenderClearPacket.TYPE, DebugRenderClearPacket.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(DebugRenderClearNamespacePacket.TYPE, DebugRenderClearNamespacePacket.STREAM_CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(AutoVanishPlayersSetPacket.TYPE, AutoVanishPlayersSetPacket.STREAM_CODEC);
 
         ClientPlayNetworking.registerGlobalReceiver(DebugRenderAddPacket.TYPE, DebugRenderAddPacket::handle);
         ClientPlayNetworking.registerGlobalReceiver(DebugRenderRemovePacket.TYPE, DebugRenderRemovePacket::handle);
@@ -351,27 +355,28 @@ public class MoulberrysTweaks implements ModInitializer {
             DebugRenderManager.tick();
         });
 
-        HudElementRegistry.attachElementAfter(VanillaHudElements.DEBUG, ResourceLocation.fromNamespaceAndPath("moulberrystweaks", "after_debug"), (guiGraphics, tickCounter) -> {
+        // TODO: can this way to register HUD stuff still work with debug menu? (DEBUG -> MISC_OVERLAYS)
+        HudElementRegistry.attachElementAfter(VanillaHudElements.MISC_OVERLAYS, Identifier.fromNamespaceAndPath("moulberrystweaks", "after_debug"), (guiGraphics, tickCounter) -> {
             DebugRenderManager.renderGui(guiGraphics);
         });
 	}
 
     private static int writeFontWidths(CommandContext<FabricClientCommandSource> cmd) {
-        ResourceLocation fontName = cmd.getArgument("font", ResourceLocation.class);
+        Identifier fontName = cmd.getArgument("font", Identifier.class);
 
         Font font = Minecraft.getInstance().font;
-        FontSet fontSet = font.fonts.apply(fontName);
-        if (fontSet.name().equals(FontManager.MISSING_FONT)) {
-            cmd.getSource().sendFeedback(Component.literal("Font does not exist"));
-            return 0;
-        }
+        GlyphSource glyphSource = font.provider.glyphs(new FontDescription.Resource(fontName));  // TODO: the whole updated method might be wrong + should re-add missing font check (how? :( )
+//        if (fontSet.name().equals(FontManager.MISSING_FONT)) {
+//            cmd.getSource().sendFeedback(Component.literal("Font does not exist"));
+//            return 0;
+//        }
 
         JsonArray array = new JsonArray();
 
         int lastWidth = -1;
         int runLength = 0;
         for (int c = Character.MIN_CODE_POINT; c <= Character.MAX_CODE_POINT; c++) {
-            int width = Mth.ceil(fontSet.getGlyphInfo(c, false).getAdvance());
+            int width = Mth.ceil(glyphSource.getGlyph(c).info().getAdvance());
 
             if (lastWidth == -1) {
                 lastWidth = width;

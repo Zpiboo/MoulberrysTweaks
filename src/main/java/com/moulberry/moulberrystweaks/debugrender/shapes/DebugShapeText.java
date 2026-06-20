@@ -42,12 +42,12 @@ public record DebugShapeText(Vec3 position, Component component, boolean shadow,
     public void renderWorldImmediate(PoseStack poseStack, MultiBufferSource.BufferSource multiBufferSource, Camera camera, int flags) {
         boolean showThroughWalls = (flags & FLAG_SHOW_THROUGH_WALLS) != 0;
 
-        Vec3 cameraPosition = camera.getPosition();
+        Vec3 cameraPosition = camera.position();
 
         poseStack.pushPose();
         poseStack.translate(this.position.x - cameraPosition.x, this.position.y - cameraPosition.y, this.position.z - cameraPosition.z);
         poseStack.scale(0.025f, -0.025f, 0.025f);
-        Quaternionf quaternionf = new Quaternionf().rotationYXZ((float) -Math.toRadians(camera.getYRot() - 180), (float) Math.toRadians(camera.getXRot()), 0.0F);
+        Quaternionf quaternionf = new Quaternionf().rotationYXZ((float) -Math.toRadians(camera.yRot() - 180), (float) Math.toRadians(camera.xRot()), 0.0F);
         poseStack.mulPose(quaternionf);
 
         Font font = Minecraft.getInstance().font;

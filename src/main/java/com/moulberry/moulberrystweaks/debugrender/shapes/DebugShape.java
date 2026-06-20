@@ -5,9 +5,9 @@ import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.moulberry.moulberrystweaks.debugrender.GuiRenderContext;
 import net.minecraft.client.Camera;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.SkipPacketDecoderException;
 import net.minecraft.network.codec.StreamCodec;
@@ -41,7 +41,7 @@ public sealed interface DebugShape permits DebugShapeBox, DebugShapeEllipsoid, D
 
     RenderMethod renderMethod();
     default void renderF3Text(List<String> list, int flags) {}
-    default void renderGuiImmediate(GuiGraphics guiGraphics, GuiRenderContext context, int flags) {}
+    default void renderGuiImmediate(GuiGraphicsExtractor guiGraphics, GuiRenderContext context, int flags) {}
     default void renderWorldImmediate(PoseStack poseStack, MultiBufferSource.BufferSource multiBufferSource, Camera camera, int flags) {}
     default void renderWorldCached(Consumer<RenderJob> render, int flags) {}
     Vec3 center();

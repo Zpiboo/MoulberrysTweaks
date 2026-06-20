@@ -3,24 +3,20 @@ package com.moulberry.moulberrystweaks.debugrender.shapes;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.*;
 import com.moulberry.moulberrystweaks.debugrender.CustomRenderTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
-import org.joml.Quaternionf;
+import org.joml.Quaternionfc;
 
 import java.time.Duration;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
-public record DebugShapeEllipsoid(Vec3 center, Vec3 size, Quaternionf rotation, int argb, int detail) implements DebugShape {
+public record DebugShapeEllipsoid(Vec3 center, Vec3 size, Quaternionfc rotation, int argb, int detail) implements DebugShape {
 
     public static final LoadingCache<Integer, float[]> SPHERE_SURFACE = CacheBuilder.newBuilder()
          .expireAfterAccess(Duration.ofMinutes(1))
